@@ -126,7 +126,7 @@
 					document.getElementById("output_siege").innerHTML = format_stats(siege)
 					document.getElementById("output_total").innerHTML = format_stats(total) + " Percentile: " + find_percentile(total_first, total).toString().substring(0, 4)
 					document.getElementById("output_detail_points").innerHTML = format_stats(random_points)
-					document.getElementById("output_detail_samples").innerHTML = "Statisics legend: (median [min, max] mean variance). Based on " + num_samples + " samples."
+					document.getElementById("output_detail_samples").innerHTML = "Statistics legend: (median [min, max] mean variance). Based on " + num_samples + " samples."
 				}
 				else {
 					var results = roll_sample(tradition)
@@ -190,7 +190,7 @@
 		
 		<h3>About</h3>
 		<p>
-			Made by <a href="https://github.com/frogdan">Frogdan</a><br>
+			<a href="https://github.com/frogdan/eu4gg">GitHub</a><br>
 			Based on <a href="http://www.eu4wiki.com/Military_leader#Formulas_for_point_distribution">Formulas for point distribution - Military leader - Europa Universalis 4 Wiki</a><br>
 			Inspired by <a href="https://www.youtube.com/user/arumba07">Arumba</a>'s <a href="https://www.dropbox.com/s/bsiwiqet92ahbaw/EU4%20General%20Calculator.xlsx?dl=0">EU4 General Calculator spreadsheet</a><br>
 		</p>

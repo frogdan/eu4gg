@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8"/>
+		<title>EU4 General Generator</title>
+
+		<script>
+			function d6() {
+				return Math.floor(Math.random() * 6 + 1)
+			}
+			function d10() {
+				return Math.floor(Math.random() * 10)
+			}		
+			function percentage_chance(chance_pct) {
+				return Math.random() * 100 < chance_pct
+			}
+			function roll(tradition)
+			{
+				document.getElementById("output_detail_tradition").innerHTML = tradition
+
+				points = d6() + Math.floor(tradition / 20)
+				for (var i = 0; i <= 80; i += 20)
+					if (percentage_chance(tradition - i))
+						++points
+				if (percentage_chance(50))
+					++points
+				document.getElementById("output_detail_points").innerHTML = points
+
+				var fire = 0
+				var shock = 0
+				var maneuver = 0
+				var siege = 0
+
+				while (points > 10) {
+					++fire
+					++shock
+					++maneuver
+					++siege
+					points -= 4
+				}
+
+				fire = Math.min(6, fire + Number(document.getElementById("input_fire").value))
+				shock = Math.min(6, shock + Number(document.getElementById("input_shock").value))
+				maneuver = Math.min(6, maneuver + Number(document.getElementById("input_maneuver").value))
+				siege = Math.min(6, siege + Number(document.getElementById("input_siege").value))
+
+				while (points > 0 && fire + shock + maneuver + siege < 24) {
+					var d = d10()
+					if (d < 1 && siege < 6)
+						++siege
+					else if (d < 4 && shock < 6)
+						++shock
+					else if (d < 7 && fire < 6)
+						++fire
+					else if (maneuver < 6)
+						++maneuver
+					else
+						++points
+					--points
+				}
+				document.getElementById("output_fire").innerHTML = fire
+				document.getElementById("output_shock").innerHTML = shock
+				document.getElementById("output_maneuver").innerHTML = maneuver
+				document.getElementById("output_siege").innerHTML = siege
+				document.getElementById("output_total").innerHTML = fire + shock + maneuver + siege
+			}
+			function roll_general() {
+				roll(Number(document.getElementById("input_tradition").value))
+			}
+			function roll_conquistador() {
+				roll(Number(document.getElementById("input_tradition").value) * 0.8)
+			}
+			function roll_ruler() {
+				roll(Number(document.getElementById("input_tradition").value) * 0.5 + Number(document.getElementById("input_ruler").value) * 7)
+			}
+			function validate_input(input) {
+				element = document.getElementById(input)
+				element.value = Math.min(element.max, Math.max(element.min, element.value))
+			}
+		</script>
+	</head>	
+	<body>
+		<h1>EU4 General Generator</h1>
+
+		<h3>Input</h3>
+		<form>
+			Army Tradition: <input type="number" id="input_tradition" min="0" max="100" value="40" onChange="validate_input('input_tradition')"><br>
+			Ruler Military Skill: <input type="number" id="input_ruler" min="0" max="6" value="5" onChange="validate_input('input_ruler')"> (only applicable when rolling ruler)<br>
+			Guaranteed Fire Pips: <input type="number" id="input_fire" min="0" max="6" value="0" onChange="validate_input('input_fire')"><br>
+			Guaranteed Shock Pips: <input type="number" id="input_shock" min="0" max="6" value="0" onChange="validate_input('input_shock')"><br>
+			Guaranteed Maneuver Pips: <input type="number" id="input_maneuver" min="0" max="6" value="0" onChange="validate_input('input_maneuver')"><br>
+			Guaranteed Siege Pips: <input type="number" id="input_siege" min="0" max="6" value="0" onChange="validate_input('input_siege')"><br>
+			<input type="button" value="Roll General" onClick="roll_general()">
+			<input type="button" value="Roll Conquistador" onClick="roll_conquistador()">
+			<input type="button" value="Roll Ruler" onClick="roll_ruler()">
+		</form>
+
+		<h3>Results</h3>
+		<p>
+			Fire Pips: <span id="output_fire">_</span><br>
+			Shock Pips: <span id="output_shock">_</span><br>
+			Maneuver Pips: <span id="output_maneuver">_</span><br>
+			Siege Pips: <span id="output_siege">_</span><br>
+			Total Pips: <span id="output_total">_</span><br>
+		</p>
+		
+		<h3>Details</h3>
+		<p>
+			Effective Army Tradition: <span id="output_detail_tradition">_</span><br>
+			Random Points Pool: <span id="output_detail_points">_</span><br>
+		</p>
+	</body>
+</html>

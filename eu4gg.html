@@ -14,55 +14,131 @@
 			function percentage_chance(chance_pct) {
 				return Math.random() * 100 < chance_pct
 			}
-			function roll(tradition)
-			{
-				document.getElementById("output_detail_tradition").innerHTML = tradition
-
+			function roll_sample(tradition) {
 				points = d6() + Math.floor(tradition / 20)
-				for (var i = 0; i <= 80; i += 20)
-					if (percentage_chance(tradition - i))
+				for (var chance = tradition; chance > 0; chance -= 20)
+					if (percentage_chance(chance))
 						++points
 				if (percentage_chance(50))
 					++points
-				document.getElementById("output_detail_points").innerHTML = points
 
-				var fire = 0
-				var shock = 0
-				var maneuver = 0
-				var siege = 0
-
+				var r = {
+					fire: 0,
+					shock: 0,
+					maneuver: 0,
+					siege: 0,
+					random_points: points,
+					total: 0
+				}
 				while (points > 10) {
-					++fire
-					++shock
-					++maneuver
-					++siege
+					++r.fire
+					++r.shock
+					++r.maneuver
+					++r.siege
 					points -= 4
 				}
+				r.fire = Math.min(6, r.fire + Number(document.getElementById("input_fire").value))
+				r.shock = Math.min(6, r.shock + Number(document.getElementById("input_shock").value))
+				r.maneuver = Math.min(6, r.maneuver + Number(document.getElementById("input_maneuver").value))
+				r.siege = Math.min(6, r.siege + Number(document.getElementById("input_siege").value))
 
-				fire = Math.min(6, fire + Number(document.getElementById("input_fire").value))
-				shock = Math.min(6, shock + Number(document.getElementById("input_shock").value))
-				maneuver = Math.min(6, maneuver + Number(document.getElementById("input_maneuver").value))
-				siege = Math.min(6, siege + Number(document.getElementById("input_siege").value))
-
-				while (points > 0 && fire + shock + maneuver + siege < 24) {
+				while (points > 0 && r.fire + r.shock + r.maneuver + r.siege < 24) {
 					var d = d10()
-					if (d < 1 && siege < 6)
-						++siege
-					else if (d < 4 && shock < 6)
-						++shock
-					else if (d < 7 && fire < 6)
-						++fire
-					else if (maneuver < 6)
-						++maneuver
+					if (d < 1 && r.siege < 6)
+						++r.siege
+					else if (d < 4 && r.shock < 6)
+						++r.shock
+					else if (d < 7 && r.fire < 6)
+						++r.fire
+					else if (r.maneuver < 6)
+						++r.maneuver
 					else
 						++points
 					--points
 				}
-				document.getElementById("output_fire").innerHTML = fire
-				document.getElementById("output_shock").innerHTML = shock
-				document.getElementById("output_maneuver").innerHTML = maneuver
-				document.getElementById("output_siege").innerHTML = siege
-				document.getElementById("output_total").innerHTML = fire + shock + maneuver + siege
+				r.total = r.fire + r.shock + r.maneuver + r.siege				
+				return r
+			}
+			function calculate_stats(values) {
+				first = values[0]
+				values.sort(function(a, b) { return a - b })
+				var sum = 0
+				for (var i = 0; i < values.length; ++i)
+					sum += values[i]
+				var mean = sum / values.length
+				var variance_sum = 0
+				for (var i = 0; i < values.length; ++i) {
+					var diff = values[i] - mean
+					variance_sum += diff * diff
+				}
+				return {
+					first: first,
+					min: values[0],
+					max: values[values.length - 1],
+					mean: mean,
+					variance: variance_sum / values.length,
+					median: (values[Math.floor(values.length / 2)] + values[Math.ceil(values.length / 2)]) * 0.5
+				}
+			}
+			function format_stats(values) {
+				var stats = calculate_stats(values)
+				return stats.first + 
+					" (" + stats.median + 
+					" [" + stats.min + ", " + stats.max + "]" + 
+					" μ=" + stats.mean.toString().substring(0, 4) + 
+					" σ<sup>2</sup>=" + stats.variance.toString().substring(0, 4) + 
+					")"
+			}
+			function find_percentile(value, values) {
+				values.sort(function(a, b) { return a - b })
+				var start = values.length
+				var end = 0
+				for (var i = 0; i < values.length; ++i) {
+					if (value <= values[i])
+						start = Math.min(start, i)
+					if (value >= values[i])
+						end = Math.max(end, i)
+				}
+				return (start + end) * 50 / values.length
+			}
+			function roll(tradition) {
+				if (document.getElementById("input_stats").checked) {
+					fire = []
+					shock = []
+					maneuver = []
+					siege = []
+					random_points = []
+					total = []
+					var num_samples = 10000
+					for (var i = 0; i < num_samples; ++i) {
+						var sample = roll_sample(tradition)
+						fire.push(sample.fire)
+						shock.push(sample.shock)
+						maneuver.push(sample.maneuver)
+						siege.push(sample.siege)
+						random_points.push(sample.random_points)
+						total.push(sample.total)
+					}
+					total_first = total[0]
+					document.getElementById("output_fire").innerHTML = format_stats(fire)
+					document.getElementById("output_shock").innerHTML = format_stats(shock)
+					document.getElementById("output_maneuver").innerHTML = format_stats(maneuver)
+					document.getElementById("output_siege").innerHTML = format_stats(siege)
+					document.getElementById("output_total").innerHTML = format_stats(total) + " Percentile: " + find_percentile(total_first, total).toString().substring(0, 4)
+					document.getElementById("output_detail_points").innerHTML = format_stats(random_points)
+					document.getElementById("output_detail_samples").innerHTML = "Statisics legend: (median [min, max] mean variance). Based on " + num_samples + " samples."
+				}
+				else {
+					var results = roll_sample(tradition)
+					document.getElementById("output_fire").innerHTML = results.fire
+					document.getElementById("output_shock").innerHTML = results.shock
+					document.getElementById("output_maneuver").innerHTML = results.maneuver
+					document.getElementById("output_siege").innerHTML = results.siege
+					document.getElementById("output_total").innerHTML = results.total
+					document.getElementById("output_detail_points").innerHTML = results.random_points
+					document.getElementById("output_detail_samples").innerHTML = ""
+				}
+				document.getElementById("output_detail_tradition").innerHTML = tradition
 			}
 			function roll_general() {
 				roll(Number(document.getElementById("input_tradition").value))
@@ -90,6 +166,7 @@
 			Guaranteed Shock Pips: <input type="number" id="input_shock" min="0" max="6" value="0" onChange="validate_input('input_shock')"><br>
 			Guaranteed Maneuver Pips: <input type="number" id="input_maneuver" min="0" max="6" value="0" onChange="validate_input('input_maneuver')"><br>
 			Guaranteed Siege Pips: <input type="number" id="input_siege" min="0" max="6" value="0" onChange="validate_input('input_siege')"><br>
+			Sample Statistics: <input type="checkbox" id="input_stats"><br>
 			<input type="button" value="Roll General" onClick="roll_general()">
 			<input type="button" value="Roll Conquistador" onClick="roll_conquistador()">
 			<input type="button" value="Roll Ruler" onClick="roll_ruler()">
@@ -108,6 +185,14 @@
 		<p>
 			Effective Army Tradition: <span id="output_detail_tradition">_</span><br>
 			Random Points Pool: <span id="output_detail_points">_</span><br>
+			<span id="output_detail_samples"></span><br>
+		</p>
+		
+		<h3>About</h3>
+		<p>
+			Made by <a href="https://github.com/frogdan">Frogdan</a><br>
+			Based on <a href="http://www.eu4wiki.com/Military_leader#Formulas_for_point_distribution">Formulas for point distribution - Military leader - Europa Universalis 4 Wiki</a><br>
+			Inspired by <a href="https://www.youtube.com/user/arumba07">Arumba</a>'s <a href="https://www.dropbox.com/s/bsiwiqet92ahbaw/EU4%20General%20Calculator.xlsx?dl=0">EU4 General Calculator spreadsheet</a><br>
 		</p>
 	</body>
 </html>
